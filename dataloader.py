@@ -359,11 +359,11 @@ class GTZANStemsDataset(Dataset):
     def _process_vocal(self, track: Dict) -> np.ndarray:
         """Load and process vocal stem."""
         vocal = self.audio_processor.load_audio(track['stems']['vocals'])
-        vocal = self.audio_processor.extract_segment(
-            vocal, self.duration, self.segment_offset
-        )
         if self.augment:
             vocal = self.augmentor.augment(vocal)
+         vocal = self.audio_processor.extract_segment(
+            vocal, self.duration, self.segment_offset
+        )
         return vocal
     
     def _process_instrumental(self, track: Dict) -> np.ndarray:
@@ -374,21 +374,21 @@ class GTZANStemsDataset(Dataset):
             track['stems']['other']
         ]
         instrumental = self.audio_processor.mix_stems(instrumental_stems)
+        if self.augment:
+            instrumental = self.augmentor.augment(instrumental)
         instrumental = self.audio_processor.extract_segment(
             instrumental, self.duration, self.segment_offset
         )
-        if self.augment:
-            instrumental = self.augmentor.augment(instrumental)
         return instrumental
     
     def _process_original(self, track: Dict) -> np.ndarray:
         """Load and process original mixed track (ground truth)."""
         original = self.audio_processor.load_audio(track['original'])
-        original = self.audio_processor.extract_segment(
-            original, self.duration, self.segment_offset
-        )
         if self.augment:
             original = self.augmentor.augment(original)
+         original = self.audio_processor.extract_segment(
+            original, self.duration, self.segment_offset
+        )
         return original
 
 
@@ -537,3 +537,4 @@ if __name__ == "__main__":
     print(f"  - Negative pairs: (vocal[i], instrumental[j]) from different tracks")
     print(f"  - Ground truth: original[i] shows what correct pairing sounds like")
     
+
