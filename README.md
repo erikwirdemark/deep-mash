@@ -11,19 +11,19 @@ pip install -e .
 Or alternatively if you use [uv](https://docs.astral.sh/uv/) (much faster and generally nicer than
 plain pip imo):
 ```
-uv venv 
+uv venv
+source .venv/bin/activate
 uv sync
 ```
 
 ## Log
 **GTZAN-stems-preprocessing**:
-- Tog några delar från Olles dataloader.py och gjorde en funktion preprocess_gtzan_stems som
-  downsamplar samt mixar non-vocals och sparar som vocals.wav & non-vocals.wav i ett nytt
-  gtzan-stems-processed directory för varje låt, för
-  tänkte det kunde vara nice att slippa upprepa hela tiden under träning sen
-- Tar ~1min på min dator, komprimerar från 20G till 1.8G
+- Tog några delar från Olles dataloader.py och gjorde en funktion GTZANStemsDataset._preprocess som
+  downsamplar samt mixar non-vocals och sparar som vocals.pt & non-vocals.pt (tensorer) i ett nytt
+  gtzan-stems-processed directory för varje låt, så man slipper upprepa @ runtime
+- Tar ~1min på min dator, går från 20G till 7.2G
 - Downsamplar till 16kHz då det är det dom använder i cocola, men skulle ev kunna testa högre senare också 
 - Jag lyssnade igenom ett par av låtarna, verkar som att mixning av non-vocals genom att bara
   summera och normalisera funkar bra. Ett möjligt problem är att vissa låtar verkar ha rätt lite
   vocals med längre perioder av tystnad, men borde vara lungt så länge vi tar tillräckligt långa
-  chunks (skulle säga minst 10s, kanske helst hela 30s om det funkar)
+  chunks (skulle säga minst 10s, kanske helst hela 30s ifall det funkar)
