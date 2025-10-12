@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "deep-mash"
+version = "0.1.0"
+readme = "README.md"
+requires-python = ">=3.13"
+
+dependencies = [
+    "ipykernel>=6.30.1",
+    "librosa>=0.11.0",
+    "matplotlib>=3.10.7",
+    "numpy>=2.3.3",
+    "torch>=2.8.0",
+]
+
+# src layout (https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/)
+[tool.hatch.build.targets.wheel]
+packages = ["src/deepmash"]

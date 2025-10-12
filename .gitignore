@@ -6,3 +6,5 @@ venv/
 
 .vscode/
 .DS_Store
+
+src/deepmash/datasets/*
