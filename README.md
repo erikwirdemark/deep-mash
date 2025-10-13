@@ -26,4 +26,6 @@ uv sync
 - Jag lyssnade igenom ett par av låtarna, verkar som att mixning av non-vocals genom att bara
   summera och normalisera funkar bra. Ett möjligt problem är att vissa låtar verkar ha rätt lite
   vocals med längre perioder av tystnad, men borde vara lungt så länge vi tar tillräckligt långa
-  chunks (skulle säga minst 10s, kanske helst hela 30s ifall det funkar)
+  chunks (skulle säga minst 10s, kanske helst hela 30s ifall det funkar). Och antagligen borde man
+  ta bort all klassisk musik, och ksk försöka filtrera bort låtar med för lite vocals (typ genom
+  threshold på genomsnitt / nån kvantil av ljudvågen?)

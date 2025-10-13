@@ -1,9 +1,7 @@
 import os
 from pathlib import Path
-import numpy as np
+from typing import Generator
 from tqdm.notebook import tqdm
-import librosa 
-import soundfile
 
 import torch
 import torch.nn as nn
@@ -12,17 +10,9 @@ import torchaudio
 import torchaudio.transforms as AT
 import torchaudio.functional as AF
 
-INPUT_ROOT = "datasets/gtzan-stems"
-TARGET_SR = 16000
-CHUNK_DURATION_SEC = 15     # all chunks will be exactly this long
-MIN_CHUNK_DURATION_SEC = 5  # discard chunks shorter than this (otherwise zero-pad to CHUNK_DURATION_SEC)
+from deepmash.data_processing.constants import *
 
-# mel-spectrogram settings (using same as cocola for now)
-N_MELS = 64
-F_MIN = 60 
-F_MAX = 7800
-WINDOW_SIZE = 1024 # 64ms @ 16kHz (should be power of 2 for efficiency)
-HOP_SIZE = 320     # 20ms @ 16kHz
+INPUT_ROOT = Path("datasets") / Path("gtzan-stems")
 
 def ensure_same_length(tensors: list[torch.Tensor]) -> list[torch.Tensor]:
     min_len = min(len(t) for t in tensors)
@@ -53,7 +43,24 @@ def load_audio(path: Path|str, sr:int|float, frame_offset=0, num_frames=-1):
     y = AF.resample(y, orig_freq=sr, new_freq=TARGET_SR) # resample
     return y # (1, sr*duration)
 
-def get_all_track_folders(root: Path|str):
+def get_chunks(vocals: torch.Tensor, non_vocals: torch.Tensor) -> Generator[tuple[torch.Tensor, torch.Tensor]]:
+    chunk_frames = CHUNK_DURATION_SEC * TARGET_SR
+    min_chunk_frames = MIN_CHUNK_DURATION_SEC * TARGET_SR
+    
+    vocals, non_vocals = ensure_same_length([vocals, non_vocals])
+    
+    for i, start in enumerate(range(0, len(vocals), chunk_frames)):
+        vocals_chunk = vocals[start:start+chunk_frames]
+        non_vocals_chunk = non_vocals[start:start+chunk_frames]
+
+        # if this is the final chunk: discard if way too short, zero-pad if slightly too short
+        if len(vocals_chunk) < min_chunk_frames: continue
+        vocals_chunk = zero_pad_or_clip(vocals_chunk, chunk_frames)
+        non_vocals_chunk = zero_pad_or_clip(non_vocals_chunk, chunk_frames)
+        
+        yield vocals_chunk, non_vocals_chunk
+
+def get_gtzan_track_folders(root: Path|str):
     return sorted(p for p in Path(root).glob("*/*") if p.is_dir())
 
 class ToLogMel(nn.Module):
@@ -74,8 +81,8 @@ class GTZANStemsDataset(Dataset):
         device: str="cpu"
     ):
         self.root = Path(root_dir)
-        self.processed_root = self.root.parent / (self.root.name + "-processed")
-        
+        self.processed_root = self.root.parent/(self.root.name+"-processed") if preprocess else self.root
+                
         if self.root == self.processed_root and preprocess:
             raise ValueError("`preprocess` is True but root_dir seems to be processed already.")
         if self.root != self.processed_root and not preprocess:
@@ -101,7 +108,7 @@ class GTZANStemsDataset(Dataset):
         7. save as `self.processed_root`/blues.000001.chunk{1|2|...}/{non-vocals|vocals}.pt
         """
         os.makedirs(self.processed_root, exist_ok=True)
-        track_folders = get_all_track_folders(self.root)
+        track_folders = get_gtzan_track_folders(self.root)
         
         for track_folder in tqdm(track_folders):
             
@@ -112,22 +119,10 @@ class GTZANStemsDataset(Dataset):
             
             vocals = load_audio(vocals_path, sr=TARGET_SR).squeeze(0)
             non_vocals = mix_stems([load_audio(p, sr=TARGET_SR).squeeze(0) for p in non_vocals_paths])
-            vocals, non_vocals = ensure_same_length([vocals, non_vocals])
             
-            chunk_frames = CHUNK_DURATION_SEC * TARGET_SR
-            min_chunk_frames = MIN_CHUNK_DURATION_SEC * TARGET_SR
-            
-            for i, start in enumerate(range(0, len(vocals), chunk_frames)):
-                vocals_chunk = vocals[start:start+chunk_frames]
-                non_vocals_chunk = non_vocals[start:start+chunk_frames]
-    
-                # if this is the final chunk: discard if way too short, zero-pad if slightly too short
-                if len(vocals_chunk) < min_chunk_frames: continue
-                vocals_chunk = zero_pad_or_clip(vocals_chunk, chunk_frames)
-                non_vocals_chunk = zero_pad_or_clip(non_vocals_chunk, chunk_frames)
-                
+            for i, (vocals_chunk, non_vocals_chunk) in enumerate(get_chunks(vocals, non_vocals)):
                 chunk_folder = self.processed_root / f"{track_folder.name}.chunk{i+1}"
                 os.makedirs(chunk_folder, exist_ok=True)
-                torch.save(vocals_chunk, chunk_folder.joinpath("vocals.pt"))
-                torch.save(non_vocals_chunk, chunk_folder.joinpath("non-vocals.pt"))
+                torch.save(vocals_chunk, chunk_folder/"vocals.pt")
+                torch.save(non_vocals_chunk, chunk_folder/"non-vocals.pt")
             
