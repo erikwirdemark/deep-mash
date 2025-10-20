@@ -1,7 +1,7 @@
 TARGET_SR = 16000              # think its hard to go lower than 16kHz
 CHUNK_DURATION_SEC = 15        # all chunks will be exactly this long
 MIN_CHUNK_DURATION_SEC = 5     # discard chunks shorter than this (otherwise zero-pad to CHUNK_DURATION_SEC)
-VOCAL_RMS_THRESHHOLD = 10      # discard chunks with vocal energy below this threshold
+VOCAL_RMS_THRESHHOLD = 0.01    # discard chunks with vocal energy below this threshold
 
 # mel-spectrogram settings
 N_MELS = 64

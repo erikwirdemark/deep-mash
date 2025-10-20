@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from webbrowser import get
 from tqdm.notebook import tqdm
 import torch
 import torch.nn as nn
@@ -7,6 +8,7 @@ import torch.nn as nn
 from deepmash.data_processing.constants import *
 from deepmash.data_processing.common import (
     has_enough_vocal_energy,
+    get_vocal_rms,
     load_audio,
     mix_stems,
     get_chunks,

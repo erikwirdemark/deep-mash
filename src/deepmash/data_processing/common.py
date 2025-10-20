@@ -19,8 +19,8 @@ def get_vocal_rms(vocals: torch.Tensor) -> float:
     return torch.sqrt(torch.mean(vocals**2)).item()
 
 # TODO: maybe filter on fraction of above-threshold frames instead of global RMS
-def has_enough_vocal_energy(vocals: torch.Tensor, threshold: float=VOCAL_RMS_THRESHHOLD) -> bool:
-    return get_vocal_rms(vocals) >= threshold
+def has_enough_vocal_energy(vocals: torch.Tensor) -> bool:
+    return get_vocal_rms(vocals) >= VOCAL_RMS_THRESHHOLD
 
 def mix_stems(stems: list[torch.Tensor], peak_val=0.98) -> torch.Tensor:
     stems = ensure_same_length(stems)
