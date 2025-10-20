@@ -9,4 +9,6 @@ venv/
 
 src/deepmash/datasets/*
 
+Data/
+
 uv.lock
