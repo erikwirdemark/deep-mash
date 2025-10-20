@@ -38,9 +38,7 @@ class EfficientNetEncoder(nn.Module):
         """ x: (B, 1, N_MELS=64, n_samples) """
         if x.ndim == 3: x = x.unsqueeze(1)  # add channel dim
         
-        print(f"input shape: {x.shape}")
         embeddings = self.encoder(x)
-        print(f"encoded embedding shape: {embeddings.shape}")
         projected = self.projection(embeddings)
         return projected
 

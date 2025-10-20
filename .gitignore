@@ -8,5 +8,3 @@ venv/
 .DS_Store
 
 src/deepmash/datasets/*
-
-uv.lock
