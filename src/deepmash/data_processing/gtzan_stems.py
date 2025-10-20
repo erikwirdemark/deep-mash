@@ -3,10 +3,10 @@ from pathlib import Path
 from tqdm.notebook import tqdm
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset
 
 from deepmash.data_processing.constants import *
 from deepmash.data_processing.common import (
+    has_enough_vocal_energy,
     load_audio,
     mix_stems,
     get_chunks,
@@ -14,6 +14,8 @@ from deepmash.data_processing.common import (
 )
 
 INPUT_ROOT = Path("datasets") / Path("gtzan-stems")
+
+EXCLUDED_GENRES = ["classical"]
 
 def get_gtzan_track_folders(root: Path|str):
     return sorted(p for p in Path(root).glob("*/*") if p.is_dir())
@@ -55,6 +57,9 @@ class GTZANStemsDataset(StemsDataset):
         track_folders = get_gtzan_track_folders(self.root)
 
         for track_folder in tqdm(track_folders):
+            genre = track_folder.parent.name
+            if genre in EXCLUDED_GENRES:
+                continue
 
             all_stem_paths = list(track_folder.glob("*.wav"))
             assert {p.stem for p in all_stem_paths} == {"drums", "bass", "other", "vocals"}, f"Not all stems exist for {str(track_folder)}"
@@ -69,9 +74,13 @@ class GTZANStemsDataset(StemsDataset):
                 continue
             
             for i, (vocals_chunk, non_vocals_chunk) in enumerate(get_chunks(vocals, non_vocals)):
+                if not has_enough_vocal_energy(vocals_chunk):
+                    continue
+                
                 if self.preprocess_transform is not None:
                     vocals_chunk = self.preprocess_transform(vocals_chunk)
                     non_vocals_chunk = self.preprocess_transform(non_vocals_chunk)
+                    
                 chunk_folder = self.processed_root / f"{track_folder.name}.chunk{i+1}"
                 os.makedirs(chunk_folder, exist_ok=True)
                 torch.save(vocals_chunk, chunk_folder/"vocals.pt")

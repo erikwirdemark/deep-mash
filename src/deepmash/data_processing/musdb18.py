@@ -4,15 +4,13 @@ from typing import Literal
 from tqdm.notebook import tqdm
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset
-import stempeg
 
 from deepmash.data_processing.constants import *
 from deepmash.data_processing.common import (
+    has_enough_vocal_energy,
     load_stem_audio,
     mix_stems,
     get_chunks,
-    StemsSample,
     StemsDataset
 )
 
@@ -69,6 +67,9 @@ class MUSDB18Dataset(StemsDataset):
             non_vocals = mix_stems([stems[STEM_INDS["drums"]], stems[STEM_INDS["bass"]], stems[STEM_INDS["other"]]])
             
             for i, (vocals_chunk, non_vocals_chunk) in enumerate(get_chunks(vocals, non_vocals)):
+                if not has_enough_vocal_energy(vocals_chunk):
+                    continue
+
                 if self.preprocess_transform is not None:
                     vocals_chunk = self.preprocess_transform(vocals_chunk)
                     non_vocals_chunk = self.preprocess_transform(non_vocals_chunk)

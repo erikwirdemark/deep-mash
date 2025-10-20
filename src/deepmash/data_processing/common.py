@@ -15,6 +15,13 @@ import stempeg
 from deepmash.data_processing.constants import *
 from deepmash.utils.utils import zero_pad_or_clip, ensure_same_length
 
+def get_vocal_rms(vocals: torch.Tensor) -> float:
+    return torch.sqrt(torch.mean(vocals**2)).item()
+
+# TODO: maybe filter on fraction of above-threshold frames instead of global RMS
+def has_enough_vocal_energy(vocals: torch.Tensor, threshold: float=VOCAL_RMS_THRESHHOLD) -> bool:
+    return get_vocal_rms(vocals) >= threshold
+
 def mix_stems(stems: list[torch.Tensor], peak_val=0.98) -> torch.Tensor:
     stems = ensure_same_length(stems)
     mixed: torch.Tensor = sum(stems) # type: ignore
@@ -73,7 +80,7 @@ class StemsSample:
             non_vocals=self.non_vocals.to(device)
         )
 
-class StemsDataset(Dataset):
+class StemsDataset(Dataset, abc.ABC):
     processed_root: Path
     chunk_folders: list[Path]
     preprocess_transform: nn.Module|None
