@@ -48,6 +48,11 @@ class GTZANStemsDataset(Dataset):
 
         self.preprocess_transform = preprocess_transform
         self.runtime_transform = runtime_transform
+        if device == "cuda":
+            print('Using CUDA device for dataset tensors.')
+        if device == "cuda" and not torch.cuda.is_available():
+            print("CUDA is not available, switching to CPU.")
+            device = "cpu"
         self.device = device
 
         if preprocess:

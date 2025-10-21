@@ -107,4 +107,4 @@ class CocolaCNN(L.LightningModule):
     @override
     def configure_optimizers(self):
         # use AdamW (>Adam), testing fused=True optimization because think its usually faster 
-        return torch.optim.AdamW(self.parameters(), lr=self.learning_rate, fused=True)
+        return torch.optim.AdamW(self.parameters(), lr=self.learning_rate, fused=False)
