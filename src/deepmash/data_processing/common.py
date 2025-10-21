@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Generator
 from dataclasses import dataclass
 import abc
+from omegaconf import DictConfig
 from sklearn.model_selection import train_test_split
 import torch
 import torch.nn as nn
@@ -118,9 +119,13 @@ def collate_stems_batch(batch: list[StemsSample]) -> StemsSample:
     return StemsSample(vocals=vocals, non_vocals=non_vocals)
 
 # Split by tracks to ensure chunks from same track are in same split
-def get_dataloaders(dataset: StemsDataset, batch_size: int, random_seed: int=42, num_workers: int=0,
-                    val_split: float=0.1, test_split: float=0.1) -> tuple[DataLoader, DataLoader, DataLoader]:
-    
+def get_dataloaders(dataset: StemsDataset, config: DictConfig) -> tuple[DataLoader, DataLoader, DataLoader]:
+    batch_size = config.batch_size
+    random_seed = config.random_seed
+    num_workers = config.num_workers
+    val_split = config.val_split
+    test_split = config.test_split
+
     track_names = sorted(set(p.name.split(".chunk")[0] for p in dataset.chunk_folders))
     train_and_val_track_names, test_track_names = train_test_split(track_names, test_size=test_split, random_state=random_seed)
     train_track_names, val_track_names = train_test_split(train_and_val_track_names, test_size=val_split/(1 - test_split), random_state=random_seed)

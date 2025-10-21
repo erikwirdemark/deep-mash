@@ -1,5 +1,6 @@
 from typing import override
 import lightning as L
+from omegaconf import DictConfig
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -50,14 +51,13 @@ def get_accuracy(similarity: torch.Tensor) -> float:
     return (preds == labels).float().mean().item()
 
 class CocolaCNN(L.LightningModule):
-    def __init__(self, learning_rate: float = 0.001, embedding_dim: int = 512, dropout_p: float = 0.1):
+    def __init__(self, config: DictConfig) -> None:
         super().__init__()
         self.save_hyperparameters()
-        self.learning_rate = learning_rate
-        
-        self.embedding_dim = embedding_dim
-        self.dropout_p = dropout_p
-        
+        self.learning_rate = config.learning_rate
+        self.embedding_dim = config.embedding_dim
+        self.dropout_p = config.dropout_p
+
         self.encoder = EfficientNetEncoder(embedding_dim=self.embedding_dim, dropout_p=self.dropout_p)
         self.layer_norm = nn.LayerNorm(normalized_shape=self.embedding_dim)
         self.tanh = nn.Tanh() # to [-1, 1]

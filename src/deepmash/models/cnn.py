@@ -1,4 +1,5 @@
 import lightning as L
+from omegaconf import DictConfig
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -107,27 +108,17 @@ class CNNEncoder(nn.Module):
         return projected
 
 class CNN(L.LightningModule):
-    def __init__(
-        self, 
-        learning_rate: float = 0.001, 
-        embedding_dim: int = 512, 
-        dropout_p: float = 0.1,
-        model_name: str = "resnet18",
-        weights: str = "DEFAULT",
-        similarity_type: str = "bilinear",  # "bilinear" or "contrastive"
-        temperature: float = 0.1  # for contrastive similarity
-    ):
+    def __init__(self, config: DictConfig):
         super().__init__()
         self.save_hyperparameters()
-        self.learning_rate = learning_rate
-        
-        self.embedding_dim = embedding_dim
-        self.dropout_p = dropout_p
-        self.model_name = model_name
-        self.weights = weights
-        self.similarity_type = similarity_type
-        self.temperature = temperature
-        
+        self.model_name = config.name
+        self.learning_rate = config.learning_rate
+        self.embedding_dim = config.embedding_dim
+        self.dropout_p = config.dropout_p
+        self.weights = config.weights
+        self.similarity_type = config.similarity_type
+        self.temperature = config.temperature
+
         self.encoder = CNNEncoder(
             model_name=self.model_name,
             embedding_dim=self.embedding_dim, 
@@ -137,7 +128,7 @@ class CNN(L.LightningModule):
         self.layer_norm = nn.LayerNorm(normalized_shape=self.embedding_dim)
         self.tanh = nn.Tanh() # to [-1, 1]
         
-        self.similarity = BilinearSimilarity(dim=self.embedding_dim)
+        self.similarity = BilinearSimilarity(dim=self.embedding_dim) # denna skriver över configurationen
 
     
     def forward(self, batch: StemsSample) -> torch.Tensor:
