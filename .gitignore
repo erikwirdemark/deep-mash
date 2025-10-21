@@ -10,5 +10,5 @@ venv/
 src/deepmash/datasets/*
 
 Data/
-
+gtzan-stems.zip
 uv.lock

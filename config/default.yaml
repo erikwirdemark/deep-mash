@@ -1,0 +1,41 @@
+training:
+  epochs: 1
+  batch_size: 16
+  learning_rate: 1e-4
+  weight_decay: 1e-5
+  early_stopping_patience: 5
+  use_spec_augment: false
+  scheduler:
+    factor: 0.5
+    patience: 5
+
+model:
+  type: base
+  embedding_dim: 128
+  n_heads: 4
+  n_layers: 2
+
+audio:
+  target_sample_rate: 16000
+  chunk_duration_sec: 15
+  min_chunk_duration_sec: 5
+  n_mels: 64
+  f_min: 60
+  f_max: 7800
+  n_fft: 1024
+  hop_size: 320
+  vocal_energy_threshold: 0.01
+
+data:
+  input_root: "/Users/erikwirdemark/deep-mash/data/genres_stems"
+  originals_root: "/Users/erikwirdemark/deep-mash/data/genres_original"
+  processed_root: "/Users/erikwirdemark/deep-mash/data/processed"
+  save_model: "/Users/erikwirdemark/deep-mash/data/saved_models/baseline" # ändra för olika körningar
+  output:    "/Users/erikwirdemark/deep-mash/results/baseline"
+
+query:
+  embeddings_prefix: "dataset"
+  which_query: "vocal"
+  which_catalogue: "instr"
+  top_k: 5
+
