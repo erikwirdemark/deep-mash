@@ -17,15 +17,14 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning)
     import stempeg
 
-from deepmash.data_processing.constants import *
 from deepmash.utils.utils import zero_pad_or_clip, ensure_same_length
 
 def get_vocal_rms(vocals: torch.Tensor) -> float:
     return torch.sqrt(torch.mean(vocals**2)).item()
 
 # TODO: maybe filter on fraction of above-threshold frames instead of global RMS
-def has_enough_vocal_energy(vocals: torch.Tensor) -> bool:
-    return get_vocal_rms(vocals) >= VOCAL_RMS_THRESHHOLD
+def has_enough_vocal_energy(vocals: torch.Tensor, threshold) -> bool:
+    return get_vocal_rms(vocals) >= threshold
 
 def mix_stems(stems: list[torch.Tensor], peak_val=0.98) -> torch.Tensor:
     stems = ensure_same_length(stems)
@@ -35,11 +34,11 @@ def mix_stems(stems: list[torch.Tensor], peak_val=0.98) -> torch.Tensor:
         mixed = mixed / max_val * peak_val
     return mixed
     
-def load_audio(path: Path|str, sr:int|float, to_mono=True) -> torch.Tensor:
+def load_audio(target_sr, path: Path|str, sr:int|float, to_mono=True) -> torch.Tensor:
     y, sr = torchaudio.load(path)
     if to_mono and y.shape[0] > 1: 
         y = y.mean(dim=0, keepdim=True)
-    y = AF.resample(y, orig_freq=sr, new_freq=TARGET_SR)
+    y = AF.resample(y, orig_freq=sr, new_freq=target_sr)
     return y
 
 # For loading the multichannel stem-format files used in MUSDB18
@@ -50,9 +49,9 @@ def load_stem_audio(path: Path|str, target_sr:int|float, to_mono=True) -> torch.
         stems_tensor = stems_tensor.mean(dim=2) 
     return stems_tensor
 
-def get_chunks(vocals: torch.Tensor, non_vocals: torch.Tensor) -> Generator[tuple[torch.Tensor, torch.Tensor]]:
-    chunk_frames = CHUNK_DURATION_SEC * TARGET_SR
-    min_chunk_frames = MIN_CHUNK_DURATION_SEC * TARGET_SR
+def get_chunks(config, vocals: torch.Tensor, non_vocals: torch.Tensor) -> Generator[tuple[torch.Tensor, torch.Tensor]]:
+    chunk_frames = config.audio.chunk_duration_sec * config.audio.target_sample_rate
+    min_chunk_frames = config.audio.min_chunk_duration_sec * config.audio.target_sample_rate
 
     vocals, non_vocals = ensure_same_length([vocals, non_vocals])
 
@@ -68,9 +67,16 @@ def get_chunks(vocals: torch.Tensor, non_vocals: torch.Tensor) -> Generator[tupl
         yield vocals_chunk, non_vocals_chunk
 
 class ToLogMel(nn.Module):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
-        self.to_melspec = AT.MelSpectrogram(sample_rate=TARGET_SR, n_mels=N_MELS, n_fft=WINDOW_SIZE, hop_length=HOP_SIZE, f_min=F_MIN, f_max=F_MAX)
+        self.to_melspec = AT.MelSpectrogram(
+            sample_rate=config.audio.target_sample_rate,
+            n_mels=config.audio.n_mels,
+            n_fft=config.audio.n_fft,
+            hop_length=config.audio.hop_size,
+            f_min=config.audio.f_min,
+            f_max=config.audio.f_max
+        )
         self.to_db = AT.AmplitudeToDB()
     def forward(self, x: torch.Tensor):
         return self.to_db(self.to_melspec(x))
