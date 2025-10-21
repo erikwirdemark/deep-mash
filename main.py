@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 from omegaconf import DictConfig, OmegaConf
-from deep_mash import train_model, DualEncoderModel, create_dataloaders, save_embeddings
+from deepmash import CocolaCNN, CNN, training_run, MUSDB18Dataset, GTZANStemsDataset, ToLogMel
 
 #!/usr/bin/env python3
 """
@@ -18,20 +18,27 @@ def preprocess(config: DictConfig, dry_run: bool = False) -> int:
 
 def train(config: DictConfig):
     # Load dataloaders
-    train_loader, val_loader, test_loader = create_dataloaders(preprocess=True, config=config)
-    model = DualEncoderModel(config=config)
-    # Train model
-    save_path = config.data.save_model + "/baseline.pt"
-    history = train_model(
-        model=model,
-        train_loader=train_loader,
-        val_loader=val_loader,
-        epochs=config.training.epochs,
-        lr=config.training.learning_rate,
-        weight_decay=config.training.weight_decay,
-        save_path=save_path
+    if config.dataset.name == "musdb18":
+        dataset = MUSDB18Dataset(
+            config=config,
+            split=config.data.split,
+            already_preprocessed=False, # Hur ska denna användas, ska vi ha en check?
+            preprocess_transform=None
         )
-    save_embeddings(model=model, dataloader=test_loader, out_path_prefix=config.data.train_embeddings_prefix)
+    elif config.dataset.name == "gtzan_stems":
+        dataset = GTZANStemsDataset(
+            config=config,
+            already_preprocessed=False, # Hur ska denna användas, ska vi ha en check?
+            preprocess_transform=ToLogMel(config=config)
+        )
+    if config.model.name == "cocola_cnn":
+        model = CocolaCNN(config=config.model)
+    elif config.model.name == "cnn":
+        model = CNN(config=config.model)
+    else:
+        raise ValueError(f"Unknown model name: {config.model.name}")
+    # Train model
+    training_run(dataset=dataset, model=model, config=config)
 
 
 def query_model(config: DictConfig, query: Optional[str], dry_run: bool = False) -> int:
@@ -70,7 +77,6 @@ def main(argv: Optional[list[str]] = None) -> int:
     if args.command == "preprocess":
         return preprocess(config, dry_run=args.dry_run)
     if args.command == "train":
-        print('command sent')
         return train(config=config)
     if args.command == "query":
         return query_model(config, args.q, dry_run=args.dry_run)

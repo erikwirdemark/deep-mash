@@ -35,7 +35,7 @@ def mix_stems(stems: list[torch.Tensor], peak_val=0.98) -> torch.Tensor:
         mixed = mixed / max_val * peak_val
     return mixed
     
-def load_audio(target_sr, path: Path|str, sr:int|float, to_mono=True) -> torch.Tensor:
+def load_audio(target_sr, path: Path|str, to_mono=True) -> torch.Tensor:
     y, sr = torchaudio.load(path)
     if to_mono and y.shape[0] > 1: 
         y = y.mean(dim=0, keepdim=True)
@@ -121,7 +121,7 @@ def collate_stems_batch(batch: list[StemsSample]) -> StemsSample:
 # Split by tracks to ensure chunks from same track are in same split
 def get_dataloaders(dataset: StemsDataset, config: DictConfig) -> tuple[DataLoader, DataLoader, DataLoader]:
     batch_size = config.batch_size
-    random_seed = config.random_seed
+    random_seed = config.seed
     num_workers = config.num_workers
     val_split = config.val_split
     test_split = config.test_split

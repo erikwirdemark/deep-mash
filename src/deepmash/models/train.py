@@ -8,26 +8,21 @@ def training_run(
     dataset: StemsDataset,
     model: L.LightningModule,
     config: DictConfig,
-    log_every_n_steps: int = 10,
-    val_split: float = 0.1,
-    test_split: float = 0.1
+    log_every_n_steps: int = 10
 ):
     
     # TODO: experiment with batch size and num_workers)
     # seems like increasing num_workers just makes it slower for me atleast
     train_loader, val_loader, test_loader = get_dataloaders(
         dataset=dataset,
-        batch_size=config.batch_size,
-        num_workers=config.num_workers,
-        val_split=val_split,
-        test_split=test_split
+        config=config.dataset,
     )
 
-    logger = CSVLogger(save_dir=config.logger_dir, name=config.log_name or model.__class__.__name__)
+    logger = CSVLogger(save_dir=config.training.logger_dir, name=config.training.log_name or model.__class__.__name__)
 
     trainer = L.Trainer(
-        max_epochs=config.max_epochs,
-        overfit_batches=config.overfit_batches,
+        max_epochs=config.training.max_epochs,
+        overfit_batches=config.training.overfit_batches,
         accelerator="auto",
         logger=logger,
         log_every_n_steps=log_every_n_steps,

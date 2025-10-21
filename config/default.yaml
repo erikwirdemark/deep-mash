@@ -1,5 +1,5 @@
 model:
-  name: resnet18
+  name: cocola_cnn
   embedding_dim: 128
   n_heads: 4
   n_layers: 2

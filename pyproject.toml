@@ -28,4 +28,4 @@ dependencies = [
 
 # src layout (https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/)
 [tool.hatch.build.targets.wheel]
-packages = ["src/deep_mash"]
+packages = ["src/deepmash"]
