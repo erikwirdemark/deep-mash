@@ -17,15 +17,16 @@ uv sync
 ```
 
 ## Log
-**GTZAN-stems-preprocessing**:
-- Tog några delar från Olles dataloader.py och gjorde en funktion GTZANStemsDataset._preprocess som
-  downsamplar samt mixar non-vocals och sparar som vocals.pt & non-vocals.pt (tensorer) i ett nytt
-  gtzan-stems-processed directory för varje låt, så man slipper upprepa @ runtime
-- Tar ~1min på min dator, går från 20G till 7.2G
-- Downsamplar till 16kHz då det är det dom använder i cocola, men skulle ev kunna testa högre senare också 
-- Jag lyssnade igenom ett par av låtarna, verkar som att mixning av non-vocals genom att bara
-  summera och normalisera funkar bra. Ett möjligt problem är att vissa låtar verkar ha rätt lite
-  vocals med längre perioder av tystnad, men borde vara lungt så länge vi tar tillräckligt långa
-  chunks (skulle säga minst 10s, kanske helst hela 30s ifall det funkar). Och antagligen borde man
-  ta bort all klassisk musik, och ksk försöka filtrera bort låtar med för lite vocals (typ genom
-  threshold på genomsnitt / nån kvantil av ljudvågen?)
+**MUSDB** 
+- La till MUSDB18-dataset (laddade ner från https://zenodo.org/records/1117372), tänkte kanske kunde
+  använda som testset sen, då en nackdel med att bara testa på gtzan-stems är att modellen kanske
+  bara lär sig ngn detalj i separationsmodellen, speciellt då separeringen de använt eventuellt
+  inte var jättebra (kan tex höra instrumentals ganska tydligt i bakgrunden på vissa vocals). MUSDB
+  skapades tydligen direkt från multitrack recordings, så har inte samma problem. 
+- Bara 150 låtar, men de flesta är mycket längre än 30s - med 15s chunks får jag 2084 chunks för hela
+  musdb, jmft med 2000 för gtzan-stems. 
+
+**Model** 
+- Började på models/cocola_cnn.py, tänker vi kan utgå från deras eftersom dom fick det att funka,
+  och sen ändra/lägga till saker om vi vill.
+
