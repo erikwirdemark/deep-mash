@@ -1,17 +1,17 @@
 model:
   name: cocola_cnn
-  embedding_dim: 128
-  n_heads: 4
-  n_layers: 2
-  learning_rate: 1e-4
+  model_name: "resnet18"
   weights: "DEFAULT"
-  similarity_type: "bilinear"
-  temperature: 0.1
+  embedding_dim: 128
+  learning_rate: 1e-4
   dropout_p: 0.1
+  weight_decay: 1e-5
+  scheduler_patience: 5
+  scheduler_factor: 0.5
 
 training:
-  max_epochs: 1
-  batch_size: 16 # BÖR VARA SAMMA SOM I DATASET
+  max_epochs: 50
+  batch_size: 16
   num_workers: 0
   overfit_batches: 0.0
   logger_dir: "/Users/erikwirdemark/deep-mash/logs"
@@ -30,7 +30,6 @@ audio:
 
 data:
   input_root: "/Users/erikwirdemark/deep-mash/data/genres_stems"
-  originals_root: "/Users/erikwirdemark/deep-mash/data/genres_original"
   processed_root: "/Users/erikwirdemark/deep-mash/data/processed"
   save_model: "/Users/erikwirdemark/deep-mash/data/saved_models/baseline" # ändra för olika körningar
   output:    "/Users/erikwirdemark/deep-mash/results/baseline"
