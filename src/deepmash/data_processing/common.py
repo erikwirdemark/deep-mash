@@ -10,7 +10,12 @@ import torchaudio
 import torchaudio.transforms as AT
 import torchaudio.functional as AF
 from torch.utils.data import Dataset, DataLoader, Subset
-import stempeg
+
+# ignore annoying "pkg_resources is deprecated as an API" coming from this import
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=UserWarning)
+    import stempeg
 
 from deepmash.data_processing.constants import *
 from deepmash.utils.utils import zero_pad_or_clip, ensure_same_length
@@ -37,6 +42,7 @@ def load_audio(path: Path|str, sr:int|float, to_mono=True) -> torch.Tensor:
     y = AF.resample(y, orig_freq=sr, new_freq=TARGET_SR)
     return y
 
+# For loading the multichannel stem-format files used in MUSDB18
 def load_stem_audio(path: Path|str, target_sr:int|float, to_mono=True) -> torch.Tensor:
     stems, sr = stempeg.read_stems(str(path), sample_rate=target_sr)
     stems_tensor = torch.from_numpy(stems).to(torch.float32)
@@ -106,7 +112,9 @@ def collate_stems_batch(batch: list[StemsSample]) -> StemsSample:
     return StemsSample(vocals=vocals, non_vocals=non_vocals)
 
 # Split by tracks to ensure chunks from same track are in same split
-def get_dataloaders(dataset: StemsDataset, batch_size: int, val_split: float=0.1, test_split: float=0.1, random_seed: int=42) -> tuple[DataLoader, DataLoader, DataLoader]:
+def get_dataloaders(dataset: StemsDataset, batch_size: int, random_seed: int=42, num_workers: int=0,
+                    val_split: float=0.1, test_split: float=0.1) -> tuple[DataLoader, DataLoader, DataLoader]:
+    
     track_names = sorted(set(p.name.split(".chunk")[0] for p in dataset.chunk_folders))
     train_and_val_track_names, test_track_names = train_test_split(track_names, test_size=test_split, random_state=random_seed)
     train_track_names, val_track_names = train_test_split(train_and_val_track_names, test_size=val_split/(1 - test_split), random_state=random_seed)
@@ -115,8 +123,8 @@ def get_dataloaders(dataset: StemsDataset, batch_size: int, val_split: float=0.1
     val_indices = [i for i, p in enumerate(dataset.chunk_folders) if p.name.split(".chunk")[0] in val_track_names]
     test_indices = [i for i, p in enumerate(dataset.chunk_folders) if p.name.split(".chunk")[0] in test_track_names]
     
-    train_loader = DataLoader(Subset(dataset, train_indices), batch_size=batch_size, shuffle=True, collate_fn=collate_stems_batch)
-    val_loader = DataLoader(Subset(dataset, val_indices), batch_size=batch_size, shuffle=False, collate_fn=collate_stems_batch)
-    test_loader = DataLoader(Subset(dataset, test_indices), batch_size=batch_size, shuffle=False, collate_fn=collate_stems_batch)
-    
+    train_loader = DataLoader(Subset(dataset, train_indices), batch_size=batch_size, shuffle=True, collate_fn=collate_stems_batch, num_workers=num_workers)
+    val_loader = DataLoader(Subset(dataset, val_indices), batch_size=batch_size, shuffle=False, collate_fn=collate_stems_batch, num_workers=num_workers)
+    test_loader = DataLoader(Subset(dataset, test_indices), batch_size=batch_size, shuffle=False, collate_fn=collate_stems_batch, num_workers=num_workers)
+
     return train_loader, val_loader, test_loader

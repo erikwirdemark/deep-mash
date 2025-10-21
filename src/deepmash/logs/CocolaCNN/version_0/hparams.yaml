@@ -1,0 +1,3 @@
+dropout_p: 0.1
+embedding_dim: 512
+learning_rate: 0.001
