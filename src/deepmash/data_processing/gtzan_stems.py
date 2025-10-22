@@ -1,14 +1,13 @@
 import os
 from pathlib import Path
 from webbrowser import get
+from omegaconf import DictConfig
 from tqdm.notebook import tqdm
 import torch
 import torch.nn as nn
 
-from deepmash.data_processing.constants import *
 from deepmash.data_processing.common import (
     has_enough_vocal_energy,
-    get_vocal_rms,
     load_audio,
     mix_stems,
     get_chunks,
@@ -25,13 +24,14 @@ def get_gtzan_track_folders(root: Path|str):
 class GTZANStemsDataset(StemsDataset):
     def __init__(
         self, 
-        root_dir: Path|str=INPUT_ROOT,
+        config: DictConfig,
         already_preprocessed: bool=True,
         preprocess_transform: nn.Module|None=None,
         runtime_transform: nn.Module|None=None,
     ):
-        self.root = Path(root_dir)
-        self.processed_root = self.root.parent/(self.root.name+"-processed")
+        self.config = config
+        self.root = Path(config.data.input_root)
+        self.processed_root = Path(config.data.processed_root)
         if already_preprocessed and not self.processed_root.exists():
             raise ValueError(f"already_preprocessed is True but {self.processed_root} does not exist")
         
@@ -69,14 +69,14 @@ class GTZANStemsDataset(StemsDataset):
             non_vocals_paths = [p for p in all_stem_paths if p.stem != "vocals"]
             
             try:
-                vocals = load_audio(vocals_path, sr=TARGET_SR).squeeze(0)
-                non_vocals = mix_stems([load_audio(p, sr=TARGET_SR).squeeze(0) for p in non_vocals_paths])
+                vocals = load_audio(path=vocals_path, target_sr=self.config.audio.target_sample_rate).squeeze(0)
+                non_vocals = mix_stems([load_audio(path=p, target_sr=self.config.audio.target_sample_rate).squeeze(0) for p in non_vocals_paths])
             except Exception as e:
                 print(f"Error loading {str(track_folder)}: {e}")
                 continue
             
-            for i, (vocals_chunk, non_vocals_chunk) in enumerate(get_chunks(vocals, non_vocals)):
-                if not has_enough_vocal_energy(vocals_chunk):
+            for i, (vocals_chunk, non_vocals_chunk) in enumerate(get_chunks(self.config, vocals=vocals, non_vocals=non_vocals)):
+                if not has_enough_vocal_energy(vocals_chunk, threshold=self.config.audio.vocal_energy_threshold):
                     continue
                 
                 if self.preprocess_transform is not None:

@@ -1,0 +1,51 @@
+model:
+  name: cocola_cnn
+  model_name: "resnet18"
+  weights: "DEFAULT"
+  embedding_dim: 128
+  learning_rate: 1e-4
+  dropout_p: 0.1
+  weight_decay: 1e-5
+  scheduler_patience: 5
+  scheduler_factor: 0.5
+
+training:
+  max_epochs: 50
+  batch_size: 16
+  num_workers: 0
+  overfit_batches: 0.0
+  logger_dir: "../logs"
+  log_name: "baseline"
+
+audio:
+  target_sample_rate: 16000
+  chunk_duration_sec: 15
+  min_chunk_duration_sec: 5
+  n_mels: 64
+  f_min: 60
+  f_max: 7800
+  n_fft: 1024
+  hop_size: 320
+  vocal_energy_threshold: 0.01
+
+data:
+  input_root: "/data/genres_stems"
+  processed_root: "/data/processed"
+  save_model: "/data/saved_models/baseline" # ändra för olika körningar
+  output:    "/results/baseline"
+
+dataset: 
+  name: "gtzan_stems"
+  seed: 42
+  batch_size: 16
+  split: "train"
+  num_workers: 0
+  val_split: 0.1
+  test_split: 0.1
+
+query:
+  embeddings_prefix: "dataset"
+  which_query: "vocal"
+  which_catalogue: "instr"
+  top_k: 5
+

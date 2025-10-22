@@ -1,0 +1,49 @@
+deepmash/
+├─ pyproject.toml
+├─ README.md
+├─ .gitignore
+├─ main.py              # Denna kan vi använda för att querya från command line
+│
+├─ src/
+│  └─ deepmash/
+│     ├─ __init__.py
+│     │
+│     ├─ preprocess/
+│     │  ├─ __init__.py
+│     │  ├─ constants.py
+│     │  ├─ GTZANStemsDataset.py
+│     │  └─ preprocess.py        # Spara våra dataloaders på något smidigt sätt så att de kan återanvändas i flera körningar
+│     │
+│     ├─ model/
+│     │  ├─ __init__.py
+│     │  ├─ base_model.py
+│     │  ├─ transformer.py 
+│     │  └─ train.ipynb         # här skulle vi kunna träna olika variationer på modeller som vi sen kan testa
+│     │
+│     ├─ sync/
+│     │  ├─ __init__.py
+│     │  ├─ beat_alignment.py
+│     │  └─ ...
+│     │
+│     └─ evaluation/
+│        ├─ __init__.py
+│        ├─ metrics.py
+│        ├─ retrieval_eval.py
+│        └─ sync_eval.py
+│
+└─ data/
+   ├─ original/
+   ├─ processed/
+   ├─ saved_models/
+   │  ├─ baseline/
+   │  │  ├─ model.pth
+   │  │  └─ embeddings/
+   │  │     ├─ vocals/
+   │  │     └─ instrumentals/
+   │  ├─ transformer/
+   │  │  └─ ...
+   │  └─ contrastive/
+   │  │  └─ ...
+   └─ results/
+      ├─ mashups/
+      └─ ...

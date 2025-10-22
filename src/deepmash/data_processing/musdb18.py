@@ -1,11 +1,11 @@
 import os
 from pathlib import Path
 from typing import Literal
+from omegaconf import DictConfig
 from tqdm.notebook import tqdm
 import torch
 import torch.nn as nn
 
-from deepmash.data_processing.constants import *
 from deepmash.data_processing.common import (
     has_enough_vocal_energy,
     load_stem_audio,
@@ -27,15 +27,17 @@ STEM_INDS = {
 class MUSDB18Dataset(StemsDataset):
     def __init__(
         self, 
+        config: DictConfig,
         root_dir: Path|str=INPUT_ROOT,
         split: Literal["train", "test"] = "train",
         already_preprocessed: bool=True,
         preprocess_transform: nn.Module|None=None,
         runtime_transform: nn.Module|None=None,
     ):
+        self.config = config
         self.split = split
-        self.root = Path(root_dir) / Path(split)
-        self.processed_root = Path(root_dir).parent/(Path(root_dir).name+"-processed")/Path(split)
+        self.root = Path(config.data.input_root) / Path(split)
+        self.processed_root = Path(config.data.processed_root) / Path(split)
         if already_preprocessed and not self.processed_root.exists():
             raise ValueError(f"already_preprocessed is True but {self.processed_root} does not exist")
         
@@ -60,14 +62,14 @@ class MUSDB18Dataset(StemsDataset):
         track_files = list(self.root.glob("*.mp4"))
         
         for track_file in tqdm(track_files):
-            stems = load_stem_audio(track_file, target_sr=TARGET_SR)
+            stems = load_stem_audio(track_file, target_sr=self.config.audio.target_sample_rate)
             assert stems.shape[0] == 5, f"Expected 5 stems in {str(track_file)}, got {stems.shape[0]}"
             
             vocals = stems[STEM_INDS["vocals"]]
             non_vocals = mix_stems([stems[STEM_INDS["drums"]], stems[STEM_INDS["bass"]], stems[STEM_INDS["other"]]])
             
             for i, (vocals_chunk, non_vocals_chunk) in enumerate(get_chunks(vocals, non_vocals)):
-                if not has_enough_vocal_energy(vocals_chunk):
+                if not has_enough_vocal_energy(vocals_chunk, threshold=self.config.audio.vocal_energy_threshold):
                     continue
 
                 if self.preprocess_transform is not None:
