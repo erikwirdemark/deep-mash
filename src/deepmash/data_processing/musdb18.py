@@ -68,7 +68,7 @@ class MUSDB18Dataset(StemsDataset):
             vocals = stems[STEM_INDS["vocals"]]
             non_vocals = mix_stems([stems[STEM_INDS["drums"]], stems[STEM_INDS["bass"]], stems[STEM_INDS["other"]]])
             
-            for i, (vocals_chunk, non_vocals_chunk) in enumerate(get_chunks(vocals, non_vocals)):
+            for i, (vocals_chunk, non_vocals_chunk) in enumerate(get_chunks(self.config, vocals, non_vocals)):
                 if not has_enough_vocal_energy(vocals_chunk, threshold=self.config.audio.vocal_energy_threshold):
                     continue
 

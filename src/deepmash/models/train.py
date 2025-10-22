@@ -2,6 +2,7 @@ import lightning as L
 from lightning.pytorch.loggers import CSVLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
 from omegaconf import DictConfig
+from time import perf_counter
 
 from deepmash.data_processing.common import get_dataloaders, StemsDataset
 
@@ -28,6 +29,8 @@ def training_run(
     )
 
     logger = CSVLogger(save_dir=config.training.logger_dir, name=config.training.log_name or model.__class__.__name__)
+    
+    t0 = perf_counter()
 
     trainer = L.Trainer(
         max_epochs=config.training.max_epochs,
@@ -41,5 +44,9 @@ def training_run(
     ) 
 
     trainer.fit(model, train_loader, val_loader)
+    print(f"Training completed in {perf_counter() - t0:.2f} seconds.")
+    
     trainer.test(model, test_loader, ckpt_path="best")
+    
+    return trainer
     

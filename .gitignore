@@ -8,6 +8,7 @@ venv/
 .DS_Store
 
 src/deepmash/datasets/*
+src/deepmash/logs/*
 
 Data/
 gtzan-stems.zip

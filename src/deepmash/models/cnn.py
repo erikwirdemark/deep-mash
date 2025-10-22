@@ -148,6 +148,8 @@ class CNN(L.LightningModule):
         self.weight_decay = config.weight_decay
         self.scheduler_patience = config.scheduler_patience
         self.scheduler_factor = config.scheduler_factor
+        
+        print(config)
 
         self.encoder = CNNEncoder(
             model_name=self.model_name,
@@ -171,7 +173,7 @@ class CNN(L.LightningModule):
         non_vocal_embeddings = self.tanh(self.layer_norm(self.encoder(non_vocals)))
         similarity = self.similarity(vocal_embeddings, non_vocal_embeddings)
         return similarity
-
+    
     def _step(self, batch: StemsSample) -> tuple[torch.Tensor, dict]:
         similarity = self(batch)
         labels = torch.arange(similarity.size(0), device=similarity.device)
@@ -214,7 +216,6 @@ class CNN(L.LightningModule):
             self.parameters(), 
             lr=self.learning_rate, 
             weight_decay=self.weight_decay,
-            fused=True
         )
         
         # Reduce learning rate when validation loss plateaus
