@@ -14,7 +14,7 @@ training:
   batch_size: 16
   num_workers: 0
   overfit_batches: 0.0
-  logger_dir: "/Users/erikwirdemark/deep-mash/logs"
+  logger_dir: "../logs"
   log_name: "baseline"
 
 audio:
@@ -29,10 +29,10 @@ audio:
   vocal_energy_threshold: 0.01
 
 data:
-  input_root: "/Users/erikwirdemark/deep-mash/data/genres_stems"
-  processed_root: "/Users/erikwirdemark/deep-mash/data/processed"
-  save_model: "/Users/erikwirdemark/deep-mash/data/saved_models/baseline" # ändra för olika körningar
-  output:    "/Users/erikwirdemark/deep-mash/results/baseline"
+  input_root: "/data/genres_stems"
+  processed_root: "/data/processed"
+  save_model: "/data/saved_models/baseline" # ändra för olika körningar
+  output:    "/results/baseline"
 
 dataset: 
   name: "gtzan_stems"

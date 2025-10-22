@@ -2,11 +2,9 @@ from pathlib import Path
 import pickle
 from typing import List
 import torch
-from deep_mash.preprocess.gtzanstems_dataset import ToLogMel
-from deep_mash.preprocess.utils import load_audio
-from deep_mash.model.base import DualEncoderModel
+from deepmash.data_processing.common import ToLogMel, load_audio
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.nn.functional as F 
 
 
 def compute_embedding_for_audio(model: DualEncoderModel, target_sr: int, audio_path: str | Path, which: str = "vocal", preprocess_transform: nn.Module = ToLogMel(), device: str | None = None) -> torch.Tensor:
@@ -20,7 +18,7 @@ def compute_embedding_for_audio(model: DualEncoderModel, target_sr: int, audio_p
     model.eval()
 
     # Load waveform (returns tensor shape (1, samples))
-    audio = load_audio(audio_path, sr=target_sr)  # (1, N)
+    audio = load_audio(path=audio_path, target_sr=target_sr)  # (1, N)
     with torch.no_grad():
         mel = preprocess_transform(audio)  # expected shape: (1, n_mels, time) or (n_mels, time)
         if mel.dim() == 3:
