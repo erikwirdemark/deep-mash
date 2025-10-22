@@ -1,6 +1,6 @@
 import lightning as L
 from lightning.pytorch.loggers import CSVLogger
-from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from omegaconf import DictConfig
 from time import perf_counter
 
@@ -27,6 +27,13 @@ def training_run(
         filename="best-checkpoint-{epoch:02d}",
         verbose=False
     )
+    early_stopping_callback = EarlyStopping(
+        monitor="val_loss",
+        mode="min",
+        patience=config.training.early_stopping_patience,
+        min_delta=0,
+    )
+
 
     logger = CSVLogger(save_dir=config.training.logger_dir, name=config.training.log_name or model.__class__.__name__)
     
@@ -40,8 +47,8 @@ def training_run(
         log_every_n_steps=log_every_n_steps,
         enable_progress_bar=True,
         val_check_interval=1.0,     # check val once every epoch
-        callbacks=[checkpoint_callback],
-    ) 
+        callbacks=[checkpoint_callback, early_stopping_callback],
+    )
 
     trainer.fit(model, train_loader, val_loader)
     print(f"Training completed in {perf_counter() - t0:.2f} seconds.")
