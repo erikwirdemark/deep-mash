@@ -8,10 +8,6 @@ from torchvision import models
 
 from deepmash.data_processing.common import StemsSample
 
-# -------------------------------------------------------------------------
-# Utility: Compute Accuracy
-# -------------------------------------------------------------------------
-
 def get_accuracy(similarity: torch.Tensor) -> float:
     preds = similarity.argmax(dim=1)
     labels = torch.arange(similarity.size(0), device=similarity.device)
@@ -31,10 +27,6 @@ def topk_accuracies(similarity: torch.Tensor, ks=(1, 5)) -> dict:
         correct = topk_indices[:, :k].eq(labels.unsqueeze(1)).any(dim=1)
         results[f"top_{k}"] = correct.float().mean().item()
     return results
-
-# -------------------------------------------------------------------------
-# CNN Model
-# -------------------------------------------------------------------------
 
 class BilinearSimilarity(nn.Module):
     def __init__(self, dim) -> None:

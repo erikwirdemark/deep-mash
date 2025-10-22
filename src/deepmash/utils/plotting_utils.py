@@ -8,7 +8,7 @@ from pathlib import Path
 from deepmash.data_processing.constants import *
 from deepmash.data_processing.common import StemsDataset, ToLogMel
 
-def display_waveform(vocals: torch.Tensor, non_vocals: torch.Tensor, track_name: str):
+def display_waveforms(vocals: torch.Tensor, non_vocals: torch.Tensor, track_name: str):
     vocals_np, non_vocals_np = vocals.numpy(), non_vocals.numpy()
     fig, axs = plt.subplots(2,1, figsize=(14,6))
     fig.suptitle(track_name)
@@ -18,6 +18,7 @@ def display_waveform(vocals: torch.Tensor, non_vocals: torch.Tensor, track_name:
     fig.tight_layout()
     display(Audio(vocals_np, rate=TARGET_SR))
     display(Audio(non_vocals_np, rate=TARGET_SR))
+    plt.show()
 
 def display_melspec(vocals: torch.Tensor, non_vocals: torch.Tensor, track_name: str):
     fig, axs = plt.subplots(2,1, figsize=(16, 6))
@@ -37,7 +38,7 @@ def display_processed_chunk(p: Path):
     non_vocals = torch.load(p/"non_vocals.pt").squeeze()
 
     if vocals.ndim == 1 and non_vocals.ndim == 1:
-        display_waveform(vocals, non_vocals, track_name)        
+        display_waveforms(vocals, non_vocals, track_name)        
         vocals_mel = ToLogMel()(vocals)
         non_vocals_mel = ToLogMel()(non_vocals)
         display_melspec(vocals_mel, non_vocals_mel, track_name)

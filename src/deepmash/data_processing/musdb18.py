@@ -28,7 +28,6 @@ class MUSDB18Dataset(StemsDataset):
     def __init__(
         self, 
         config: DictConfig,
-        root_dir: Path|str=INPUT_ROOT,
         split: Literal["train", "test"] = "train",
         already_preprocessed: bool=True,
         preprocess_transform: nn.Module|None=None,
