@@ -12,6 +12,7 @@ model:
 training:
   max_epochs: 1
   batch_size: 16
+  early_stopping_patience: 4
   num_workers: 0
   overfit_batches: 0.0
   logger_dir: "logs/cocola_cnn"

@@ -36,19 +36,18 @@ def training_run(
     dataset: StemsDataset,
     model: L.LightningModule,
     config: DictConfig,
-    log_every_n_steps: int = 10
+    log_every_n_steps: int = 10,
+    checkpoint_path: str = None  # Optional parameter for checkpoint path
 ):
     
-    # TODO: experiment with batch size and num_workers)
-    # seems like increasing num_workers just makes it slower for me atleast
     train_loader, val_loader, test_loader = get_dataloaders(
         dataset=dataset,
         config=config.dataset,
     )
     
     checkpoint_callback = ModelCheckpoint(
-        monitor="val_loss",          # metric to monitor
-        mode="min",                  # or "max" for accuracy
+        monitor="val_top_1",          # metric to monitor
+        mode="max",                  # or "max" for accuracy
         save_top_k=1,                # keep only the best checkpoint
         filename="best-checkpoint-{epoch:02d}",
         verbose=False
@@ -67,7 +66,7 @@ def training_run(
         callbacks=[checkpoint_callback],
     ) 
 
-    trainer.fit(model, train_loader, val_loader)
+    trainer.fit(model, train_loader, val_loader, ckpt_path=checkpoint_path)
     trainer.test(model, test_loader, ckpt_path="best")
 
     print("Training complete.")
@@ -75,3 +74,23 @@ def training_run(
     if config.training.save_embeddings:
         save_embeddings(model=model, loaders=[train_loader, val_loader, test_loader], output_prefix=config.data.save_model)
     
+def test_run(
+    dataset: StemsDataset,
+    model: L.LightningModule,
+    config: DictConfig,
+    checkpoint_path: str = "best"  # Default to "best" checkpoint
+):
+    # Load the test dataset
+    train_loader, val_loader, test_loader = get_dataloaders(
+        dataset=dataset,
+        config=config.dataset,
+    )
+    
+    # Load the specified model checkpoint
+    trainer = L.Trainer(
+        accelerator="auto",
+        enable_progress_bar=True,
+    )
+
+    # Test the model with the specified checkpoint
+    trainer.test(model, test_loader, ckpt_path=checkpoint_path)

@@ -17,20 +17,21 @@ def get_accuracy(similarity: torch.Tensor) -> float:
     labels = torch.arange(similarity.size(0), device=similarity.device)
     return (preds == labels).float().mean().item()
 
-def topk_accuracies(similarity: torch.Tensor, ks=(1, 5)) -> dict:
-    """
-    Computes Top-k accuracy for k in ks, handling cases where k > batch size.
-    """
-    labels = torch.arange(similarity.size(0), device=similarity.device)
-    max_k = min(max(ks), similarity.size(1))  # Avoid k out of range
-    _, topk_indices = similarity.topk(max_k, dim=1)
+def topk_accuracies(similarity: torch.Tensor, ks=(1,2,3,4,5)) -> dict:
+        """
+        Computes Top-k accuracy for k in ks, handling cases where k > batch size.
+        """
+        labels = torch.arange(similarity.size(0), device=similarity.device)
+        max_k = min(max(ks), similarity.size(1))  # Avoid k out of range
+        _, topk_indices = similarity.topk(max_k, dim=1)
 
-    results = {}
-    for k in ks:
-        k = min(k, similarity.size(1))  # Clip k
-        correct = topk_indices[:, :k].eq(labels.unsqueeze(1)).any(dim=1)
-        results[f"top_{k}"] = correct.float().mean().item()
-    return results
+        results = {}
+        for k in ks:
+            k = min(k, similarity.size(1))  # Clip k
+            correct = topk_indices[:, :k].eq(labels.unsqueeze(1)).any(dim=1)
+            results[f"top_{k}"] = correct.float().mean().item()
+        return results
+    
 
 # -------------------------------------------------------------------------
 # CNN Model
@@ -57,7 +58,9 @@ class CNNEncoder(nn.Module):
         model_name: str = "resnet18",
         embedding_dim: int = 512, 
         dropout_p: float = 0.1,
-        weights: str = "DEFAULT"
+        weights: str = "DEFAULT",
+        n_heads: int = 8,
+        n_layers: int = 2,
     ) -> None:
         super().__init__()
         self.embedding_dim = embedding_dim
@@ -118,8 +121,17 @@ class CNNEncoder(nn.Module):
             self.features,
             nn.AdaptiveAvgPool2d((1, 1)),  # Global average pooling
             nn.Dropout(self.dropout_p),
-            nn.Flatten()
         )
+
+        transformer_encoder_layer = nn.TransformerEncoderLayer(
+            d_model=feature_dim,
+            nhead=n_heads,
+            dim_feedforward=1024,
+            dropout=dropout_p,
+            activation='gelu',
+            batch_first=True
+        )
+        self.transformer = nn.TransformerEncoder(transformer_encoder_layer, num_layers=n_layers)
         
         self.projection = nn.Linear(feature_dim, self.embedding_dim)
 
@@ -133,8 +145,19 @@ class CNNEncoder(nn.Module):
             x = x.repeat(1, 3, 1, 1)
             
         features = self.encoder(x)
-        projected = self.projection(features)
-        return projected
+
+        # Collapse frequency dimension
+        features = features.mean(dim=2)           # [B, C, time]
+        features = features.transpose(1, 2)       # [B, time, C]
+
+        features = self.transformer(features)     # temporal modeling -> [B, time, C]
+
+        # FIX: pool over the time dimension (dim=1). previous code used dims [2,3] causing IndexError.
+        pooled = features.mean(dim=1)          # [B, C]
+
+        emb = self.projection(pooled)
+        emb = F.normalize(emb, p=2, dim=1)  # L2-normalize
+        return emb
 
 class CNN(L.LightningModule):
     def __init__(self, config: DictConfig):
@@ -148,12 +171,16 @@ class CNN(L.LightningModule):
         self.weight_decay = config.weight_decay
         self.scheduler_patience = config.scheduler_patience
         self.scheduler_factor = config.scheduler_factor
+        self.n_heads = config.n_heads
+        self.n_layers = config.n_layers
 
         self.encoder = CNNEncoder(
             model_name=self.model_name,
             embedding_dim=self.embedding_dim, 
             dropout_p=self.dropout_p,
-            weights=self.weights
+            weights=self.weights,
+            n_heads=self.n_heads,
+            n_layers=self.n_layers,
         )
         self.layer_norm = nn.LayerNorm(normalized_shape=self.embedding_dim)
         self.tanh = nn.Tanh() # to [-1, 1]
@@ -183,7 +210,7 @@ class CNN(L.LightningModule):
         similarity = self(batch)
         labels = torch.arange(similarity.size(0), device=similarity.device)
         loss = F.cross_entropy(similarity, labels)
-        accs = topk_accuracies(similarity, ks=(1, 5))
+        accs = topk_accuracies(similarity)
         return loss, accs
     
     def _log_metrics(self, prefix: str, accs: dict):
@@ -191,7 +218,7 @@ class CNN(L.LightningModule):
             self.log(f"{prefix}_{k}", v, on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
     def _log(self, name: str, value: float):
-        self.log(name, value, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log(name, value, on_step=False, on_epoch=True, prog_bar=True, logger=True)
     
     @override
     def training_step(self, batch: StemsSample, batch_idx: int) -> torch.Tensor:
