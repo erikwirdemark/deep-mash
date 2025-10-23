@@ -1,5 +1,5 @@
 model:
-  name: cocola_cnn
+  name: "cocola_cnn"
   model_name: "resnet18"
   weights: "DEFAULT"
   embedding_dim: 128
@@ -10,13 +10,13 @@ model:
   scheduler_factor: 0.5
 
 training:
-  max_epochs: 1
+  max_epochs: 5
   batch_size: 16
   num_workers: 0
   overfit_batches: 0.0
-  logger_dir: "logs/cocola_cnn"
+  logger_dir: "logs"
   log_name: "baseline"
-  save_embeddings: false
+  save_embeddings: true
 
 audio:
   target_sample_rate: 16000
@@ -45,8 +45,7 @@ dataset:
   test_split: 0.1
 
 query:
-  embeddings_prefix: "dataset"
-  which_query: "vocal"
-  which_catalogue: "instr"
   top_k: 5
+  model_path: logs/baseline/version_4/checkpoints/best-checkpoint-epoch=04.ckpt
+  catalogue_path: data/saved_models/baseline
 

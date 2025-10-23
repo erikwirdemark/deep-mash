@@ -172,6 +172,13 @@ class CNN(L.LightningModule):
         similarity = self.similarity(vocal_embeddings, non_vocal_embeddings)
         return similarity
 
+    def compute_embeddings(self, batch: StemsSample) -> torch.Tensor:
+        vocals, non_vocals = batch.vocals, batch.non_vocals  # (B, N_MELS=64, n_samples)
+        names = batch.name
+        vocal_embeddings = self.tanh(self.layer_norm(self.encoder(vocals)))
+        non_vocal_embeddings = self.tanh(self.layer_norm(self.encoder(non_vocals)))
+        return vocal_embeddings, non_vocal_embeddings, names
+
     def _step(self, batch: StemsSample) -> tuple[torch.Tensor, dict]:
         similarity = self(batch)
         labels = torch.arange(similarity.size(0), device=similarity.device)
@@ -214,7 +221,7 @@ class CNN(L.LightningModule):
             self.parameters(), 
             lr=self.learning_rate, 
             weight_decay=self.weight_decay,
-            fused=True
+            fused=False
         )
         
         # Reduce learning rate when validation loss plateaus

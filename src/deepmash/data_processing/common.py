@@ -82,15 +82,17 @@ class ToLogMel(nn.Module):
     def forward(self, x: torch.Tensor):
         return self.to_db(self.to_melspec(x))
     
-@dataclass 
+@dataclass
 class StemsSample:
     vocals: torch.Tensor
     non_vocals: torch.Tensor
-    
-    def to(self, device: torch.device) -> StemsSample:
+    name: str | list[str] | None = None
+
+    def to(self, device: torch.device) -> "StemsSample":
         return StemsSample(
             vocals=self.vocals.to(device),
-            non_vocals=self.non_vocals.to(device)
+            non_vocals=self.non_vocals.to(device),
+            name=self.name,
         )
 
 class StemsDataset(Dataset, abc.ABC):
@@ -110,13 +112,13 @@ class StemsDataset(Dataset, abc.ABC):
         if self.runtime_transform is not None:
             vocals = self.runtime_transform(vocals)
             non_vocals = self.runtime_transform(non_vocals)
-
-        return StemsSample(vocals=vocals, non_vocals=non_vocals)
+        return StemsSample(vocals=vocals, non_vocals=non_vocals, name=folder.name)
 
 def collate_stems_batch(batch: list[StemsSample]) -> StemsSample:
     vocals = torch.stack([sample.vocals for sample in batch], dim=0)
     non_vocals = torch.stack([sample.non_vocals for sample in batch], dim=0)
-    return StemsSample(vocals=vocals, non_vocals=non_vocals)
+    names = [sample.name for sample in batch]
+    return StemsSample(vocals=vocals, non_vocals=non_vocals, name=names)
 
 # Split by tracks to ensure chunks from same track are in same split
 def get_dataloaders(dataset: StemsDataset, config: DictConfig) -> tuple[DataLoader, DataLoader, DataLoader]:
