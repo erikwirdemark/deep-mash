@@ -9,10 +9,6 @@ import torchvision.transforms as T
 
 
 def compute_embedding_for_audio(model, target_sr: int, audio_path: str | Path, preprocess_transform: nn.Module, device: str | None = None) -> torch.Tensor:
-    """Compute a single embedding for an audio file using the model's vocal or instr encoder.
-
-    Returns a CPU tensor of shape (embedding_dim,).
-    """
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     model = model.to(device)
@@ -73,8 +69,11 @@ def query_saved_embeddings(
 
     # Print nicely
     print("Top matches:")
+    i = 1
     for name, score in results:
-        print(f"{name}: \t{score*100:.4f}% match")
+        print(f"[{i}] \t{name}: \t{score*100:.4f}% match")
+        i += 1
+    
 
     return results
     

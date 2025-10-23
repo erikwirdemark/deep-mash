@@ -136,8 +136,8 @@ def get_dataloaders(dataset: StemsDataset, config: DictConfig) -> tuple[DataLoad
     val_indices = [i for i, p in enumerate(dataset.chunk_folders) if p.name.split(".chunk")[0] in val_track_names]
     test_indices = [i for i, p in enumerate(dataset.chunk_folders) if p.name.split(".chunk")[0] in test_track_names]
     
-    train_loader = DataLoader(Subset(dataset, train_indices), batch_size=batch_size, shuffle=True, collate_fn=collate_stems_batch, num_workers=num_workers)
-    val_loader = DataLoader(Subset(dataset, val_indices), batch_size=batch_size, shuffle=False, collate_fn=collate_stems_batch, num_workers=num_workers)
-    test_loader = DataLoader(Subset(dataset, test_indices), batch_size=batch_size, shuffle=False, collate_fn=collate_stems_batch, num_workers=num_workers)
+    train_loader = DataLoader(Subset(dataset, train_indices), batch_size=batch_size, shuffle=True, collate_fn=collate_stems_batch, num_workers=0)
+    val_loader = DataLoader(Subset(dataset, val_indices), batch_size=batch_size, shuffle=False, collate_fn=collate_stems_batch, num_workers=0)
+    test_loader = DataLoader(Subset(dataset, test_indices), batch_size=batch_size, shuffle=False, collate_fn=collate_stems_batch, num_workers=0)
 
     return train_loader, val_loader, test_loader

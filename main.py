@@ -5,7 +5,7 @@ from typing import Optional
 
 import torch
 from omegaconf import DictConfig, OmegaConf
-from deepmash import CocolaCNN, CNN, training_run, MUSDB18Dataset, GTZANStemsDataset, ToLogMel, query_saved_embeddings
+from deepmash import CocolaCNN, CNN, training_run, MUSDB18Dataset, GTZANStemsDataset, ToLogMel, query_saved_embeddings, mashup
 
 #!/usr/bin/env python3
 """
@@ -55,6 +55,15 @@ def query_model(config: DictConfig, query: Optional[str]) -> int:
         top_k=config.query.top_k,
         preprocess_transform=ToLogMel(config=config)
         )
+    index = input("Select track to mix with...\n")
+    print(f"Mixing your song...")
+    name = results[int(index)-1][0]
+    genre = name.split(".")[0]
+    track = '.'.join(name.split(".")[:-1])
+    chunk = name.split("chunk")[-1]
+    print(f"Selected track: {name}")
+    non_vocals_path = '/Users/erikwirdemark/deep-mash/data/genres_stems/' + genre + '/' + track 
+    mashup(config=config, vocals_path=Path(query), track_folder=Path(non_vocals_path), plot=False)
 
 def mix_action(config: DictConfig, direction: str, dry_run: bool = False) -> int:
     pass

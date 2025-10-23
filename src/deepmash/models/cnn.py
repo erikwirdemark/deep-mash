@@ -198,6 +198,10 @@ class CNN(L.LightningModule):
         non_vocal_embeddings = self.tanh(self.layer_norm(self.encoder(non_vocals)))
         similarity = self.similarity(vocal_embeddings, non_vocal_embeddings)
         return similarity
+    
+    def compute_vocal_embedding(self, vocal) -> torch.Tensor:
+        vocal_embedding = self.tanh(self.layer_norm(self.encoder(vocal)))
+        return vocal_embedding
 
     def compute_embeddings(self, batch: StemsSample) -> torch.Tensor:
         vocals, non_vocals = batch.vocals, batch.non_vocals  # (B, N_MELS=64, n_samples)
