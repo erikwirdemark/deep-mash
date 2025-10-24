@@ -60,7 +60,6 @@ def query_model(config: DictConfig, query: Optional[str]) -> int:
     name = results[int(index)-1][0]
     genre = name.split(".")[0]
     track = '.'.join(name.split(".")[:-1])
-    chunk = name.split("chunk")[-1]
     print(f"Selected track: {name}")
     non_vocals_path = '/Users/erikwirdemark/deep-mash/data/genres_stems/' + genre + '/' + track 
     mashup(config=config, vocals_path=Path(query), track_folder=Path(non_vocals_path), plot=False)

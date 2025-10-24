@@ -1,13 +1,15 @@
 model:
-  name: "cocola_cnn"
-  model_name: "resnet18"
-  weights: "DEFAULT"
+  name: cnn
+  model_name: resnet18
+  weights: DEFAULT
   embedding_dim: 128
-  learning_rate: 1e-4
-  dropout_p: 0.1
-  weight_decay: 1e-5
-  scheduler_patience: 5
+  learning_rate: 0.0001
+  dropout_p: 0.2
+  weight_decay: 1.0e-05
+  scheduler_patience: 3
   scheduler_factor: 0.5
+  n_heads: 4
+  n_layers: 2
 
 training:
   max_epochs: 5
@@ -33,7 +35,7 @@ data:
   input_root: "data/genres_stems"
   processed_root: "data/processed"
   save_model: "data/saved_models/baseline" # ändra för olika körningar
-  output:    "results/baseline"
+  output:    "results/baseline/"
 
 dataset: 
   name: "gtzan_stems"
@@ -46,6 +48,6 @@ dataset:
 
 query:
   top_k: 5
-  model_path: logs/baseline/version_4/checkpoints/best-checkpoint-epoch=04.ckpt
+  model_path: /Users/erikwirdemark/deep-mash/best-checkpoint-epoch=17.ckpt
   catalogue_path: data/saved_models/baseline
 
