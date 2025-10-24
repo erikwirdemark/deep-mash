@@ -1,0 +1,1 @@
+from deepmash.sync.sync import mashup

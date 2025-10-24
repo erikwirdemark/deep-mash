@@ -1,9 +1,36 @@
+import pickle
 import lightning as L
 from lightning.pytorch.loggers import CSVLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
 from omegaconf import DictConfig
+import torch
+from tqdm import tqdm
 
 from deepmash.data_processing.common import get_dataloaders, StemsDataset
+
+def save_embeddings(model, loaders, output_prefix: str):
+    print("Saving embeddings...")
+    model.eval()
+    all_vocal_embeddings = []
+    all_non_vocal_embeddings = []
+    all_names = []
+    for loader in tqdm(loaders):
+        for batch in tqdm(loader):
+            vocal_embs, non_vocal_embs, names = model.compute_embeddings(batch)
+            all_vocal_embeddings.append(vocal_embs.cpu())
+            all_non_vocal_embeddings.append(non_vocal_embs.cpu())
+            all_names.extend(names)
+    all_vocal_embeddings_tensor = torch.cat(all_vocal_embeddings, dim=0)  # [N, D]
+    all_non_vocal_embeddings_tensor = torch.cat(all_non_vocal_embeddings, dim=0)  # [N, D]
+    emb_file = f"{output_prefix}_vocal_embs.pt"
+    non_emb_file = f"{output_prefix}_non_vocal_embs.pt"
+    names_file = f"{output_prefix}_names.pkl"
+    torch.save(all_vocal_embeddings_tensor, emb_file)
+    torch.save(all_non_vocal_embeddings_tensor, non_emb_file)
+    with open(names_file, "wb") as f:
+        pickle.dump(all_names, f)
+    print(f"Saved embeddings to {emb_file}, {non_emb_file} and names to {names_file}")
+
 
 def training_run(
     dataset: StemsDataset,
@@ -42,6 +69,11 @@ def training_run(
     trainer.fit(model, train_loader, val_loader, ckpt_path=checkpoint_path)
     trainer.test(model, test_loader, ckpt_path="best")
 
+    print("Training complete.")
+    # save embeddings 
+    if config.training.save_embeddings:
+        save_embeddings(model=model, loaders=[train_loader, val_loader, test_loader], output_prefix=config.data.save_model)
+    
 def test_run(
     dataset: StemsDataset,
     model: L.LightningModule,

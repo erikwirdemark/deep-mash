@@ -1,23 +1,24 @@
 model:
-  name: cocola_cnn
-  model_name: "resnet18"
-  weights: "DEFAULT"
+  name: cnn
+  model_name: resnet18
+  weights: DEFAULT
   embedding_dim: 128
-  learning_rate: 1e-4
-  dropout_p: 0.1
-  weight_decay: 1e-5
-  scheduler_patience: 5
+  learning_rate: 0.0001
+  dropout_p: 0.2
+  weight_decay: 1.0e-05
+  scheduler_patience: 3
   scheduler_factor: 0.5
+  n_heads: 4
+  n_layers: 2
 
 training:
-  max_epochs: 1
+  max_epochs: 5
   batch_size: 16
-  early_stopping_patience: 4
   num_workers: 0
   overfit_batches: 0.0
-  logger_dir: "logs/cocola_cnn"
+  logger_dir: "logs"
   log_name: "baseline"
-  save_embeddings: false
+  save_embeddings: true
 
 audio:
   target_sample_rate: 16000
@@ -34,7 +35,7 @@ data:
   input_root: "data/genres_stems"
   processed_root: "data/processed"
   save_model: "data/saved_models/baseline" # ändra för olika körningar
-  output:    "results/baseline"
+  output:    "results/baseline/"
 
 dataset: 
   name: "gtzan_stems"
@@ -46,8 +47,7 @@ dataset:
   test_split: 0.1
 
 query:
-  embeddings_prefix: "dataset"
-  which_query: "vocal"
-  which_catalogue: "instr"
   top_k: 5
+  model_path: /Users/erikwirdemark/deep-mash/best-checkpoint-epoch=17.ckpt
+  catalogue_path: data/saved_models/baseline
 
